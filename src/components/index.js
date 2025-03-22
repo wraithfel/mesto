@@ -2,6 +2,9 @@
 import { createCard } from "./card.js";
 import { openModal, deleteModal } from "./modal.js";
 import { ShowValidMessage } from "./validate.js";
+import "../pages/index.css";
+import "../vendor/fonts.css";
+import "../vendor/normalize.css";
 
 // Данные карточек
 const initialCards = [

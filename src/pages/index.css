@@ -25,3 +25,7 @@
   background-color: rgba(0, 0, 0, 0.15);
   pointer-events: none;
 }
+
+.profile__image {
+  background-image: url("../images/avatar.jpg");
+}
