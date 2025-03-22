@@ -10,7 +10,7 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     clean: true, // очищает папку dist при каждой сборке
   },
-  mode: "development",
+  mode: process.env.NODE_ENV || "development",
   plugins: [
     new HtmlWebpackPlugin({
       template: "./src/index.html", // откуда брать HTML
