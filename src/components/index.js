@@ -6,25 +6,52 @@ import "../pages/index.css";
 import "../vendor/fonts.css";
 import "../vendor/normalize.css";
 
+const currentUserId = "21ad6fadc4894fe61263adf9";
+//Данные пользователя
+fetch("https://nomoreparties.co/v1/apf-cohort-202/users/me", {
+  headers: {
+    authorization: "804fc1f6-ae2f-43b2-b4f0-e3fb55b31129",
+  },
+})
+  .then((res) => res.json())
+  .then((data) => {
+    name.textContent = data.name;
+    job.textContent = data.about;
+    image.style.backgroundImage = `url(${data.avatar})`;
+  });
+
 // Данные карточек
-const initialCards = [
-  { name: "Архыз", link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/arkhyz.jpg" },
-  {
-    name: "Челябинская область",
-    link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/chelyabinsk-oblast.jpg",
+fetch("https://nomoreparties.co/v1/apf-cohort-202/cards", {
+  headers: {
+    authorization: "804fc1f6-ae2f-43b2-b4f0-e3fb55b31129",
   },
-  { name: "Иваново", link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/ivanovo.jpg" },
-  { name: "Камчатка", link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/kamchatka.jpg" },
-  {
-    name: "Холмогорский район",
-    link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/kholmogorsky-rayon.jpg",
-  },
-  { name: "Байкал", link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/baikal.jpg" },
-];
+})
+  .then((res) => res.json())
+  .then((data) => {
+    data.forEach((cardData) => {
+      const card = createCard(cardData, cardTemplateSelector, handleImageClick, cardData._id);
+      const like_counter = card.querySelector(".counter__like");
+      const like = card.querySelector(".card__like-button");
+      cardData.likes.forEach((usr) => {
+        if (usr._id === currentUserId) {
+          like.classList.add("card__like-button_is-active");
+        }
+      });
+      like_counter.textContent = cardData.likes.length;
+      if (cardData.owner._id !== currentUserId) {
+        card.querySelector(".card__delete-button").style.display = "none";
+      }
+      placesList.appendChild(card);
+    });
+  });
 
 // DOM-элементы
 const placesList = document.querySelector(".places__list");
 const cardTemplateSelector = "#card-template";
+
+const name = document.querySelector(".profile__title");
+const job = document.querySelector(".profile__description");
+const image = document.querySelector(".profile__image");
 
 // Попапы
 const profilePopup = document.querySelector(".popup_type_edit");
@@ -74,30 +101,51 @@ function handleImageClick(cardData) {
 
 function handleProfileFormSubmit(evt) {
   evt.preventDefault();
-
-  const name = document.querySelector(".profile__title");
-  const job = document.querySelector(".profile__description");
-
-  if (profileSaveButton.classList.contains("non-active-button")) return;
-
-  name.textContent = nameInput.value;
-  job.textContent = jobInput.value;
-  deleteModal(profilePopup);
+  fetch("https://nomoreparties.co/v1/apf-cohort-202/users/me", {
+    method: "PATCH",
+    headers: {
+      authorization: "804fc1f6-ae2f-43b2-b4f0-e3fb55b31129",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: nameInput.value,
+      about: jobInput.value,
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (profileSaveButton.classList.contains("non-active-button")) return;
+      name.textContent = data.name;
+      job.textContent = data.about;
+      deleteModal(profilePopup);
+    });
 }
 
 function handleCardFormSubmit(evt) {
   evt.preventDefault();
-
-  if (profileSaveButton.classList.contains("non-active-button")) return;
-
-  const cardData = {
-    name: cardNameInput.value,
-    link: linkInput.value,
-  };
-
-  const newCard = createCard(cardData, cardTemplateSelector, handleImageClick);
-  placesList.prepend(newCard);
-  deleteModal(cardPopup);
+  fetch("https://nomoreparties.co/v1/apf-cohort-202/cards", {
+    method: "POST",
+    headers: {
+      authorization: "804fc1f6-ae2f-43b2-b4f0-e3fb55b31129",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: cardNameInput.value,
+      link: linkInput.value,
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (profileSaveButton.classList.contains("non-active-button")) return;
+      const newCard = createCard(
+        { name: data.name, link: data.link },
+        cardTemplateSelector,
+        handleImageClick,
+        data._id
+      );
+      placesList.prepend(newCard);
+      deleteModal(cardPopup);
+    });
 }
 
 // Навешивание слушателей
@@ -143,10 +191,4 @@ document.querySelectorAll(".popup").forEach((popup) => {
       deleteModal(popup);
     }
   });
-});
-
-// Отрисовка начальных карточек
-initialCards.forEach((cardData) => {
-  const card = createCard(cardData, cardTemplateSelector, handleImageClick);
-  placesList.appendChild(card);
 });
