@@ -1,4 +1,6 @@
 // card.js
+import { addLike, removeLike, deleteCard as deleteCardAPI } from "./api.js";
+
 export function createCard(cardData, templateSelector, handleImageClick, cardId) {
   const cardTemplate = document.querySelector(templateSelector).content;
   const cardElement = cardTemplate.querySelector(".card").cloneNode(true);
@@ -13,52 +15,35 @@ export function createCard(cardData, templateSelector, handleImageClick, cardId)
   likeButton.addEventListener("click", () => {
     likeButton.classList.toggle("card__like-button_is-active");
     if (likeButton.classList.contains("card__like-button_is-active")) {
-      fetch(`https://nomoreparties.co/v1/apf-cohort-202/cards/likes/${cardId}`, {
-        method: "PUT",
-        headers: {
-          authorization: "804fc1f6-ae2f-43b2-b4f0-e3fb55b31129",
-        },
-      }).then((res) => {
-        if (res.ok) {
-          return res.json();
-        } else {
-          Promise.reject("Ошибка добавления лайка");
-        }
-      });
-      likeCount.textContent = parseInt(likeCount.textContent, 10) + 1;
+      addLike(cardId)
+        .then(() => {
+          likeCount.textContent = parseInt(likeCount.textContent, 10) + 1;
+        })
+        .catch((err) => {
+          console.error(err);
+          // Возвращаем предыдущее состояние кнопки, если произошла ошибка
+          likeButton.classList.toggle("card__like-button_is-active");
+        });
     } else {
-      fetch(`https://nomoreparties.co/v1/apf-cohort-202/cards/likes/${cardId}`, {
-        method: "DELETE",
-        headers: {
-          authorization: "804fc1f6-ae2f-43b2-b4f0-e3fb55b31129",
-        },
-      }).then((res) => {
-        if (res.ok) {
-          return res.json();
-        } else {
-          Promise.reject("Ошибка удаления лайка");
-        }
-      });
-      likeCount.textContent = parseInt(likeCount.textContent, 10) - 1;
+      removeLike(cardId)
+        .then(() => {
+          likeCount.textContent = parseInt(likeCount.textContent, 10) - 1;
+        })
+        .catch((err) => {
+          console.error(err);
+          // Возвращаем предыдущее состояние кнопки, если произошла ошибка
+          likeButton.classList.toggle("card__like-button_is-active");
+        });
     }
   });
 
   // Удаление карточки
   deleteButton.addEventListener("click", () => {
-    fetch(`https://nomoreparties.co/v1/apf-cohort-202/cards/${cardId}`, {
-      method: "DELETE",
-      headers: {
-        authorization: "804fc1f6-ae2f-43b2-b4f0-e3fb55b31129",
-      },
-    })
-      .then((res) => {
-        if (res.ok) {
-          cardElement.remove();
-        } else {
-          return Promise.reject("Ошибка при удалении карточки");
-        }
+    deleteCardAPI(cardId)
+      .then(() => {
+        cardElement.remove();
       })
-      .catch((err) => console.log(`error:${err}`));
+      .catch((err) => console.log(`error: ${err}`));
   });
 
   // Открытие изображения
